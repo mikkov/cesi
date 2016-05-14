@@ -7,6 +7,7 @@ import sqlite3
 import mmap
 import os
 import time
+import posixpath
 
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -530,9 +531,24 @@ def changepasswordhandler(username):
 def page_not_found(error):
     return render_template('page_not_found.html'), 404
 
+def relative_url_for(endpoint, **values):
+    """Like url_for, but generates relative paths for each request."""
+    print("relative_url_for")
+    url = url_for(endpoint, **values)
+    if not url.startswith('/'):
+        return url
+
+    request_path = request.path
+    if not request_path.endswith('/'):
+        request_path = posixpath.dirname(request_path)
+
+    return posixpath.relpath(url, request_path)
+
+app.jinja_env.globals['url_for'] = relative_url_for
+
 try:
     if __name__ == '__main__':
-        app.run(debug=True, use_reloader=True, host=HOST)
+        app.run(debug=False, use_reloader=False, host=HOST)
 except xmlrpclib.Fault as err:
     print "A fault occurred"
     print "Fault code: %d" % err.faultCode
